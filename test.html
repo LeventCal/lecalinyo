@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>lecal - test</title>
+
+<style>
+body {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:Arial;
+  background:linear-gradient(135deg,#dbeafe,#eff6ff);
+}
+
+.container {
+  background:white;
+  padding:40px;
+  border-radius:20px;
+  text-align:center;
+  width:480px;
+}
+
+h2 {
+  margin-bottom:20px;
+}
+
+#word {
+  font-size:34px;
+  margin:20px;
+  font-weight:bold;
+}
+
+input {
+  padding:10px;
+  width:70%;
+  margin-bottom:10px;
+}
+
+button {
+  padding:10px 18px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
+}
+
+.blue { background:#3b82f6; }
+.red { background:#ef4444; }
+.green { background:#22c55e; }
+.gray { background:#6b7280; }
+
+.section {
+  margin-top:20px;
+}
+
+#lists {
+  margin-top:20px;
+  text-align:left;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Test</h2>
+
+<button class="blue" onclick="startTest()">Başla</button>
+<button class="gray" onclick="goBack()">← Geri</button>
+
+<div id="testArea" style="display:none;">
+  <div id="word"></div>
+  <input id="answer" placeholder="Cevap yaz" onkeydown="handleKey(event)">
+  <p id="result"></p>
+
+  <button class="gray" onclick="finish()">Testi Bitir</button>
+</div>
+
+<div id="summary" style="display:none;">
+
+  <h3>📊 Sonuç</h3>
+  <p id="stats"></p>
+
+  <div class="section">
+    <h4>📋 Görüntüle</h4>
+    <button class="green" onclick="showCorrect()">Doğrular</button>
+    <button class="red" onclick="showWrong()">Yanlışlar</button>
+    <button class="gray" onclick="showEmpty()">Boşlar</button>
+  </div>
+
+  <div class="section">
+    <h4>🔁 Tekrar Çöz</h4>
+    <button class="red" onclick="startWrongTest()">Yanlışları Çöz</button>
+    <button class="gray" onclick="startEmptyTest()">Boşları Çöz</button>
+  </div>
+
+  <div id="lists"></div>
+
+</div>
+
+</div>
+
+<script>
+let words = JSON.parse(localStorage.getItem("words")) || [];
+
+let remaining = [];
+let correct = [];
+let wrong = [];
+let empty = [];
+
+let current;
+let answered = false;
+
+function startTest(){
+  if(words.length === 0) return alert("Kelime yok");
+
+  remaining = [...words];
+  correct = [];
+  wrong = [];
+  empty = [];
+
+  testArea.style.display = "block";
+  summary.style.display = "none";
+
+  nextWord();
+}
+
+function startWrongTest(){
+  if(wrong.length === 0) return alert("Yanlış yok");
+
+  remaining = [...wrong];
+  correct = [];
+  wrong = [];
+  empty = [];
+
+  testArea.style.display = "block";
+  summary.style.display = "none";
+
+  nextWord();
+}
+
+function startEmptyTest(){
+  if(empty.length === 0) return alert("Boş yok");
+
+  remaining = [...empty];
+  correct = [];
+  wrong = [];
+  empty = [];
+
+  testArea.style.display = "block";
+  summary.style.display = "none";
+
+  nextWord();
+}
+
+function nextWord(){
+  if(remaining.length === 0){
+    finish();
+    return;
+  }
+
+  let i = Math.floor(Math.random()*remaining.length);
+  current = remaining.splice(i,1)[0];
+
+  word.innerText = current.eng;
+  answer.value = "";
+  result.innerText = "";
+  answered = false;
+}
+
+function check(){
+  if(answered) return;
+
+  let user = answer.value.toLowerCase().trim();
+
+  let meanings = current.tr.toLowerCase().split("/");
+  meanings = meanings.map(m => m.trim());
+
+  let allAnswers = meanings.join(" / ");
+
+  if(user === ""){
+    result.innerText = "⚪ Boş → " + allAnswers;
+    empty.push(current);
+  }
+  else if(meanings.some(m => m.includes(user))){
+    result.innerText = "✅ Doğru → " + allAnswers;
+    correct.push(current);
+  }
+  else {
+    result.innerText = "❌ Yanlış → " + allAnswers;
+    wrong.push(current);
+  }
+
+  answered = true;
+}
+
+function handleKey(e){
+  if(e.key === "Enter"){
+    if(!answered) check();
+    else nextWord();
+  }
+}
+
+function finish(){
+
+  if(!answered && current){
+    check();
+  }
+
+  testArea.style.display = "none";
+  summary.style.display = "block";
+
+  let total = correct.length + wrong.length + empty.length;
+
+  let correctP = Math.round((correct.length/total)*100) || 0;
+  let wrongP = Math.round((wrong.length/total)*100) || 0;
+  let emptyP = Math.round((empty.length/total)*100) || 0;
+
+  stats.innerHTML =
+    "✅ Doğru: " + correct.length + " ("+correctP+"%)<br>" +
+    "❌ Yanlış: " + wrong.length + " ("+wrongP+"%)<br>" +
+    "⚪ Boş: " + empty.length + " ("+emptyP+"%)";
+}
+
+function showCorrect(){
+  lists.innerHTML =
+    "<h4>✅ Doğrular</h4>" +
+    correct.map(w => w.eng + " - " + w.tr).join("<br>");
+}
+
+function showWrong(){
+  lists.innerHTML =
+    "<h4>❌ Yanlışlar</h4>" +
+    wrong.map(w => w.eng + " - " + w.tr).join("<br>");
+}
+
+function showEmpty(){
+  lists.innerHTML =
+    "<h4>⚪ Boşlar</h4>" +
+    empty.map(w => w.eng + " - " + w.tr).join("<br>");
+}
+
+function goBack(){
+  window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>

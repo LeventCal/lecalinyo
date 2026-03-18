@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>lecal - kelime ekle</title>
+
+<style>
+body {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  font-family:Arial;
+  background:linear-gradient(135deg,#dbeafe,#eff6ff);
+}
+
+.container {
+  background:white;
+  padding:40px;
+  border-radius:20px;
+  text-align:center;
+  width:450px;
+}
+
+textarea {
+  width:90%;
+  height:150px;
+}
+
+button {
+  padding:10px 20px;
+  margin:10px;
+  border:none;
+  border-radius:10px;
+  background:#3b82f6;
+  color:white;
+  cursor:pointer;
+}
+
+.reset {
+  background:#ef4444;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Kelime Ekle</h2>
+
+<textarea id="bulk" placeholder="impact etkilemek"></textarea>
+<br>
+
+<button onclick="addBulk()">Ekle</button>
+<button onclick="goTest()">Teste Git</button>
+<button class="reset" onclick="resetAll()">Sıfırla</button>
+
+<p id="info"></p>
+
+</div>
+
+<script>
+let words = JSON.parse(localStorage.getItem("words")) || [];
+
+function save(){
+  localStorage.setItem("words", JSON.stringify(words));
+}
+
+function addBulk(){
+  let lines = bulk.value.split("\n");
+
+  for(let line of lines){
+    if(!line.trim()) continue;
+
+    let parts;
+
+    if(line.includes("-")){
+      parts = line.split("-");
+    } else {
+      let w = line.trim().split(" ");
+      let eng = w.shift();
+      let tr = w.join(" ");
+      parts = [eng, tr];
+    }
+
+    let eng = parts[0]?.trim();
+    let tr = parts[1]?.trim();
+
+    if(eng && tr){
+      words.push({eng, tr});
+    }
+  }
+
+  save();
+  info.innerText = words.length + " kelime kayıtlı";
+  bulk.value = "";
+}
+
+function goTest(){
+  window.location.href = "test.html";
+}
+
+function resetAll(){
+  if(confirm("Her şeyi silmek istiyor musun?")){
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+info.innerText = words.length + " kelime kayıtlı";
+</script>
+
+</body>
+</html>
