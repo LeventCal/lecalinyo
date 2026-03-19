@@ -19,12 +19,14 @@ body {
   padding:40px;
   border-radius:20px;
   text-align:center;
-  width:450px;
+  width:500px;
 }
 
 textarea {
-  width:90%;
-  height:150px;
+  width:100%;
+  height:200px;
+  padding:10px;
+  margin-top:10px;
 }
 
 button {
@@ -32,14 +34,12 @@ button {
   margin:10px;
   border:none;
   border-radius:10px;
-  background:#3b82f6;
-  color:white;
   cursor:pointer;
+  color:white;
 }
 
-.reset {
-  background:#ef4444;
-}
+.blue { background:#3b82f6; }
+.red { background:#ef4444; }
 </style>
 </head>
 
@@ -49,66 +49,75 @@ button {
 
 <h2>Kelime Ekle</h2>
 
-<textarea id="bulk" placeholder="impact etkilemek"></textarea>
+<p>Format: <br>
+go off çalmak/patlamak <br>
+veya <br>
+go off - çalmak/patlamak
+</p>
+
+<textarea id="bulkInput" placeholder="Kelime listesini buraya yapıştır..."></textarea>
+
 <br>
 
-<button onclick="addBulk()">Ekle</button>
-<button onclick="goTest()">Teste Git</button>
-<button class="reset" onclick="resetAll()">Sıfırla</button>
-
-<p id="info"></p>
+<button class="blue" onclick="addWords()">Ekle</button>
+<button class="blue" onclick="goTest()">Teste Git</button>
+<button class="red" onclick="resetWords()">Sıfırla</button>
 
 </div>
 
 <script>
-let words = JSON.parse(localStorage.getItem("words")) || [];
+function addWords(){
+  let text = document.getElementById("bulkInput").value.trim();
 
-function save(){
+  if(!text) return alert("Boş!");
+
+  let lines = text.split("\n");
+
+  let words = lines.map(line => {
+
+    line = line.trim();
+
+    // 🔥 önce "-" kontrol et
+    if(line.includes(" - ")){
+      let parts = line.split(" - ");
+      return {
+        eng: parts[0].trim(),
+        tr: parts[1].trim()
+      };
+    }
+
+    // 🔥 yoksa boşlukla çöz (multi-word destekli)
+    let wordsArr = line.split(" ");
+
+    // ilk kelimeyi al (ama İngilizce multi-word olabilir diye gelişmiş kontrol)
+    let splitIndex = wordsArr.findIndex(w => w.includes("/"));
+
+    // eğer / yoksa son kelimeyi anlam kabul et
+    if(splitIndex === -1){
+      let eng = wordsArr.slice(0, wordsArr.length - 1).join(" ");
+      let tr = wordsArr[wordsArr.length - 1];
+      return { eng, tr };
+    }
+
+    let eng = wordsArr.slice(0, splitIndex).join(" ");
+    let tr = wordsArr.slice(splitIndex).join(" ");
+
+    return { eng, tr };
+  });
+
   localStorage.setItem("words", JSON.stringify(words));
-}
 
-function addBulk(){
-  let lines = bulk.value.split("\n");
-
-  for(let line of lines){
-    if(!line.trim()) continue;
-
-    let parts;
-
-    if(line.includes("-")){
-      parts = line.split("-");
-    } else {
-      let w = line.trim().split(" ");
-      let eng = w.shift();
-      let tr = w.join(" ");
-      parts = [eng, tr];
-    }
-
-    let eng = parts[0]?.trim();
-    let tr = parts[1]?.trim();
-
-    if(eng && tr){
-      words.push({eng, tr});
-    }
-  }
-
-  save();
-  info.innerText = words.length + " kelime kayıtlı";
-  bulk.value = "";
+  alert("Kelime eklendi ✅");
 }
 
 function goTest(){
   window.location.href = "test.html";
 }
 
-function resetAll(){
-  if(confirm("Her şeyi silmek istiyor musun?")){
-    localStorage.clear();
-    location.reload();
-  }
+function resetWords(){
+  localStorage.removeItem("words");
+  alert("Sıfırlandı ❌");
 }
-
-info.innerText = words.length + " kelime kayıtlı";
 </script>
 
 </body>
